@@ -1,4 +1,4 @@
-FROM jupyter/scipy-notebook:latest
+FROM jupyter/scipy-notebook:903c591af249
 
 ARG NB_USER=jovyan
 ARG NB_UID=1000
