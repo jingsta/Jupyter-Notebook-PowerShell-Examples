@@ -27,12 +27,10 @@ RUN apt-get install -y --no-install-recommends \
 RUN rm -rf /var/lib/apt/lists/*
 
 # Install .NET Core SDK
-
-# When updating the SDK version, the sha512 value a few lines down must also be updated.
-ENV DOTNET_SDK_VERSION 3.1.200
+ENV DOTNET_SDK_VERSION 3.0.100
 
 RUN curl -SL --output dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz \
-    && dotnet_sha512='5b9398c7bfe7f67cd9f38fdd4e6e429e1b6aaac0fe04672be0f8dca26580fb46906fd1d2deea6a7d3fb07d77e898f067d3ac1805fe077dc7c1adf9515c9bc9a9' \
+    && dotnet_sha512='766da31f9a0bcfbf0f12c91ea68354eb509ac2111879d55b656f19299c6ea1c005d31460dac7c2a4ef82b3edfea30232c82ba301fb52c0ff268d3e3a1b73d8f7' \
     && echo "$dotnet_sha512 dotnet.tar.gz" | sha512sum -c - \
     && mkdir -p /usr/share/dotnet \
     && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
@@ -48,26 +46,29 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true \
     # Opt out of telemetry until after we install jupyter when building the image, this prevents caching of machine id
     DOTNET_TRY_CLI_TELEMETRY_OPTOUT=true
 
+# Trigger first run experience by running arbitrary cmd
+RUN dotnet help
+
 # Copy notebooks
+
 COPY . ${HOME}/Notebooks/
 
 # Copy package sources
-COPY ./NuGet.config ${HOME}/nuget.config
+
+# COPY ./NuGet.config ${HOME}/nuget.config
 
 RUN chown -R ${NB_UID} ${HOME}
 USER ${USER}
 
-#Install nteract 
-RUN pip install nteract_on_jupyter
-
-# Install lastest build from master branch of Microsoft.DotNet.Interactive from myget
-RUN dotnet tool install -g Microsoft.dotnet-interactive --version 1.0.126506 --add-source "https://dotnet.myget.org/F/dotnet-try/api/v3/index.json"
+# Install Microsoft.DotNet.Interactive
+RUN dotnet tool install -g dotnet-try 
+#--add-source "https://dotnet.myget.org/F/dotnet-try/api/v3/index.json"
 
 ENV PATH="${PATH}:${HOME}/.dotnet/tools"
 RUN echo "$PATH"
 
 # Install kernel specs
-RUN dotnet interactive jupyter install
+RUN dotnet try jupyter install
 
 # Enable telemetry once we install jupyter for the image
 ENV DOTNET_TRY_CLI_TELEMETRY_OPTOUT=false
